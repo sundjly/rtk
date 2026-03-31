@@ -130,30 +130,47 @@ pub fn run(filter: Option<&str>, show_all: bool, verbose: u8) -> Result<()> {
 }
 
 fn get_sensitive_patterns() -> HashSet<&'static str> {
-    let mut set = HashSet::new();
-    set.insert("key");
-    set.insert("secret");
-    set.insert("password");
-    set.insert("token");
-    set.insert("credential");
-    set.insert("auth");
-    set.insert("private");
-    set.insert("api_key");
-    set.insert("apikey");
-    set.insert("access_key");
-    set.insert("jwt");
-    set
+    [
+        // Generic patterns
+        "key",
+        "secret",
+        "password",
+        "passwd",
+        "token",
+        "credential",
+        "auth",
+        "private",
+        "api_key",
+        "apikey",
+        "access_key",
+        "jwt",
+        "certificate",
+        "cert",
+        "ssh_key",
+        // Connection strings (often embed credentials)
+        "database_url",
+        "connection_string",
+        "redis_url",
+        "mongodb_uri",
+        // Provider-specific
+        "stripe_",
+        "slack_",
+        "discord_",
+        "twilio_",
+        "sendgrid_",
+        "github_token",
+        "gh_token",
+        "openai_",
+        "anthropic_",
+    ]
+    .iter()
+    .copied()
+    .collect()
 }
 
 fn mask_value(value: &str) -> String {
-    let chars: Vec<char> = value.chars().collect();
-    if chars.len() <= 4 {
-        "****".to_string()
-    } else {
-        let prefix: String = chars[..2].iter().collect();
-        let suffix: String = chars[chars.len() - 2..].iter().collect();
-        format!("{}****{}", prefix, suffix)
-    }
+    let len = value.chars().count();
+    format!("****({} chars)", len)
 }
 
 fn is_lang_var(key: &str) -> bool {

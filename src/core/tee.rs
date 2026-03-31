@@ -120,15 +120,18 @@ fn write_tee_file(
     let filename = format!("{}_{}.log", epoch, slug);
     let filepath = tee_dir.join(filename);
 
+    // Redact credentials before writing to disk
+    let redacted = crate::core::redact::redact_credentials(raw);
+
     // Truncate at max_file_size
-    let content = if raw.len() > max_file_size {
+    let content = if redacted.len() > max_file_size {
         format!(
             "{}\n\n--- truncated at {} bytes ---",
-            &raw[..max_file_size],
+            &redacted[..max_file_size],
             max_file_size
         )
     } else {
-        raw.to_string()
+        redacted
     };
 
     std::fs::write(&filepath, content).ok()?;

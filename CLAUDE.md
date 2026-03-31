@@ -16,7 +16,7 @@ This is a fork with critical fixes for git argument parsing and modern JavaScrip
 
 **Verify correct installation:**
 ```bash
-rtk --version  # Should show "rtk 0.28.2" (or newer)
+rtk --version  # Should show "rtk 0.34.2" (or newer)
 rtk gain       # Should show token savings stats (NOT "command not found")
 ```
 
@@ -43,6 +43,8 @@ rtk cargo test                # preferred (token-optimized)
 cargo test <test_name>        # specific test
 cargo test <module_name>::    # module tests
 cargo test -- --nocapture     # with stdout
+cargo insta review            # review snapshot changes (interactive)
+cargo insta accept            # accept all pending snapshots
 bash scripts/test-all.sh      # smoke tests (installed binary required)
 ```
 
@@ -74,6 +76,17 @@ For the full architecture, component details, and module development patterns, s
 - [docs/TECHNICAL.md](docs/TECHNICAL.md) — End-to-end flow, folder map, hook system, filter pipeline
 
 Module responsibilities are documented in each folder's `README.md` and each file's `//!` doc header. Browse `src/cmds/*/` to discover available filters.
+
+### TOML Filter DSL
+
+In addition to Rust-coded filters, rtk supports declarative TOML filters in `src/filters/` (~60 configs). The TOML filter engine (`src/core/toml_filter.rs`) applies regex-based rules without writing Rust code. Project-local overrides go in `.rtk/filters/`, global overrides in `~/.config/rtk/filters/`.
+
+### Hook System
+
+The hook system (`src/hooks/`) enables transparent command rewriting for AI tools:
+- `rtk init [-g]` — install hooks for Claude Code, Gemini, Cursor, Codex, etc.
+- `rtk rewrite` — rewrite a command to its rtk equivalent (used by hooks)
+- `rtk verify` — verify hook installation integrity (SHA-256 checksums)
 
 ### Proxy Mode
 

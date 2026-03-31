@@ -20,6 +20,14 @@ pub fn run(
         eprintln!("Reading: {} (filter: {})", file.display(), level);
     }
 
+    // Warn about sensitive file types
+    if is_sensitive_file(file) {
+        eprintln!(
+            "rtk: warning: {} may contain secrets — output will be redacted in tracking",
+            file.display()
+        );
+    }
+
     // Read file content
     let content = fs::read_to_string(file)
         .with_context(|| format!("Failed to read file: {}", file.display()))?;
@@ -176,6 +184,37 @@ fn apply_line_window(
     content.to_string()
 }
 
+/// Check if a file path looks like it may contain secrets.
+fn is_sensitive_file(path: &Path) -> bool {
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let path_str = path.to_string_lossy();
+
+    // .env files
+    if name == ".env" || name.starts_with(".env.") {
+        return true;
+    }
+    // Private keys and certs
+    if name.ends_with(".pem") || name.ends_with(".key") || name == "id_rsa" || name == "id_ed25519"
+    {
+        return true;
+    }
+    // AWS / cloud credentials
+    if (path_str.contains(".aws") && (name == "credentials" || name == "config"))
+        || (path_str.contains(".ssh") && name.starts_with("id_"))
+    {
+        return true;
+    }
+    // Git config with potential tokens
+    if path_str.contains(".git") && name == "config" {
+        return true;
+    }
+    // Kubernetes config
+    if path_str.contains(".kube") && name == "config" {
+        return true;
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +264,27 @@ fn main() {{
         let output = apply_line_window(input, Some(2), None, &Language::Unknown);
         assert!(output.starts_with("a\n"));
         assert!(output.contains("more lines"));
+    }
+
+    #[test]
+    fn test_is_sensitive_file() {
+        assert!(is_sensitive_file(Path::new(".env")));
+        assert!(is_sensitive_file(Path::new(".env.local")));
+        assert!(is_sensitive_file(Path::new("/home/user/.ssh/id_rsa")));
+        assert!(is_sensitive_file(Path::new("/home/user/.ssh/id_ed25519")));
+        assert!(is_sensitive_file(Path::new("/home/user/.aws/credentials")));
+        assert!(is_sensitive_file(Path::new("/home/user/.kube/config")));
+        assert!(is_sensitive_file(Path::new("server.key")));
+        assert!(is_sensitive_file(Path::new("cert.pem")));
+        assert!(is_sensitive_file(Path::new("/repo/.git/config")));
+    }
+
+    #[test]
+    fn test_is_not_sensitive_file() {
+        assert!(!is_sensitive_file(Path::new("src/main.rs")));
+        assert!(!is_sensitive_file(Path::new("Cargo.toml")));
+        assert!(!is_sensitive_file(Path::new("README.md")));
+        assert!(!is_sensitive_file(Path::new(".envrc"))); // not .env
+        assert!(!is_sensitive_file(Path::new("config.toml")));
     }
 }

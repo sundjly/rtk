@@ -7,7 +7,7 @@
 //! # Architecture
 //!
 //! - Storage: SQLite database (~/.local/share/rtk/tracking.db)
-//! - Retention: 90-day automatic cleanup
+//! - Retention: 14-day automatic cleanup
 //! - Metrics: Input/output tokens, savings %, execution time
 //!
 //! # Quick Start
@@ -62,7 +62,8 @@ fn project_filter_params(project_path: Option<&str>) -> (Option<String>, Option<
 }
 
 /// Number of days to retain tracking history before automatic cleanup.
-const HISTORY_DAYS: i64 = 90;
+/// Reduced from 90 to 14 to minimize credential exposure window.
+const HISTORY_DAYS: i64 = 14;
 
 /// Main tracking interface for recording and querying command history.
 ///
@@ -330,7 +331,7 @@ impl Tracker {
     /// Record a command execution with token counts and timing.
     ///
     /// Calculates savings metrics and stores the record in the database.
-    /// Automatically cleans up records older than 90 days after insertion.
+    /// Automatically cleans up records older than 14 days after insertion.
     ///
     /// # Arguments
     ///
@@ -365,13 +366,14 @@ impl Tracker {
         };
 
         let project_path = current_project_path_string(); // added: record cwd
+        let redacted_cmd = crate::core::redact::redact_credentials(original_cmd);
 
         self.conn.execute(
             "INSERT INTO commands (timestamp, original_cmd, rtk_cmd, project_path, input_tokens, output_tokens, saved_tokens, savings_pct, exec_time_ms)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)", // added: project_path
             params![
                 Utc::now().to_rfc3339(),
-                original_cmd,
+                redacted_cmd,
                 rtk_cmd,
                 project_path, // added
                 input_tokens as i64,
@@ -406,12 +408,13 @@ impl Tracker {
         error_message: &str,
         fallback_succeeded: bool,
     ) -> Result<()> {
+        let redacted_cmd = crate::core::redact::redact_credentials(raw_command);
         self.conn.execute(
             "INSERT INTO parse_failures (timestamp, raw_command, error_message, fallback_succeeded)
              VALUES (?1, ?2, ?3, ?4)",
             params![
                 Utc::now().to_rfc3339(),
-                raw_command,
+                redacted_cmd,
                 error_message,
                 fallback_succeeded as i32,
             ],
