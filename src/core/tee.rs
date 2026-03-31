@@ -210,7 +210,7 @@ pub struct TeeConfig {
 impl Default for TeeConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
+            enabled: false,
             mode: TeeMode::default(),
             max_files: DEFAULT_MAX_FILES,
             max_file_size: DEFAULT_MAX_FILE_SIZE,
@@ -257,7 +257,10 @@ mod tests {
 
     #[test]
     fn test_should_tee_skip_small_output() {
-        let config = TeeConfig::default();
+        let config = TeeConfig {
+            enabled: true,
+            ..TeeConfig::default()
+        };
         let dir = PathBuf::from("/tmp/tee");
         // Below MIN_TEE_SIZE (500)
         assert!(should_tee(&config, 100, 1, Some(dir)).is_none());
@@ -265,14 +268,20 @@ mod tests {
 
     #[test]
     fn test_should_tee_skip_success_in_failures_mode() {
-        let config = TeeConfig::default(); // mode = Failures
+        let config = TeeConfig {
+            enabled: true,
+            ..TeeConfig::default()
+        }; // mode = Failures
         let dir = PathBuf::from("/tmp/tee");
         assert!(should_tee(&config, 1000, 0, Some(dir)).is_none());
     }
 
     #[test]
     fn test_should_tee_proceed_on_failure() {
-        let config = TeeConfig::default(); // mode = Failures
+        let config = TeeConfig {
+            enabled: true,
+            ..TeeConfig::default()
+        }; // mode = Failures
         let dir = PathBuf::from("/tmp/tee");
         assert!(should_tee(&config, 1000, 1, Some(dir)).is_some());
     }
@@ -280,6 +289,7 @@ mod tests {
     #[test]
     fn test_should_tee_always_mode_success() {
         let config = TeeConfig {
+            enabled: true,
             mode: TeeMode::Always,
             ..TeeConfig::default()
         };
@@ -360,7 +370,7 @@ mod tests {
     #[test]
     fn test_tee_config_default() {
         let config = TeeConfig::default();
-        assert!(config.enabled);
+        assert!(!config.enabled);
         assert_eq!(config.mode, TeeMode::Failures);
         assert_eq!(config.max_files, 20);
         assert_eq!(config.max_file_size, 1_048_576);

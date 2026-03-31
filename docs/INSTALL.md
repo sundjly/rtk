@@ -177,11 +177,11 @@ rtk proxy git log --oneline -20    # 不过滤，但仍记录使用指标
 > ```
 > 可通过 `rtk config` 查看当前生效的完整配置（含默认值）。
 
-### 关闭 Tee（不保存故障原始输出）
+### 开启 Tee（保存故障原始输出，默认关闭）
 
 ```toml
 [tee]
-enabled = false
+enabled = true
 ```
 
 ### 手动清理数据
