@@ -49,6 +49,9 @@ sudo cp target/release/rtk /usr/local/bin/
 
 ```bash
 sudo rm /usr/local/bin/rtk
+# macOS（配置和数据在同一目录）
+rm -rf ~/Library/Application\ Support/rtk
+# Linux
 rm -rf ~/.config/rtk              # 配置文件
 rm -rf ~/.local/share/rtk         # 追踪数据库和 tee 日志
 ```
@@ -74,7 +77,7 @@ rtk cargo clippy      # 精简的 lint 输出
 
 ```bash
 rtk init              # 为当前项目安装 hook
-rtk init -g           # 全局安装 hook
+rtk init -g           # 全局安装 hook (recommand)
 rtk verify            # 验证 hook 完整性
 ```
 
@@ -159,7 +162,20 @@ rtk proxy git log --oneline -20    # 不过滤，但仍记录使用指标
 
 ## 配置
 
-配置文件路径：`~/.config/rtk/config.toml`
+配置文件路径：
+- macOS: `~/Library/Application Support/rtk/config.toml`
+- Linux: `~/.config/rtk/config.toml`
+
+> **注意：** 配置文件默认不存在，RTK 使用内置默认值。需要自定义时手动创建：
+> ```bash
+> # macOS
+> mkdir -p ~/Library/Application\ Support/rtk
+> touch ~/Library/Application\ Support/rtk/config.toml
+> # Linux
+> mkdir -p ~/.config/rtk
+> touch ~/.config/rtk/config.toml
+> ```
+> 可通过 `rtk config` 查看当前生效的完整配置（含默认值）。
 
 ### 关闭 Tee（不保存故障原始输出）
 
@@ -171,7 +187,11 @@ enabled = false
 ### 手动清理数据
 
 ```bash
-rm ~/.local/share/rtk/tracking.db   # 删除追踪数据库
+# macOS
+rm ~/Library/Application\ Support/rtk/history.db    # 删除追踪数据库
+rm -rf ~/Library/Application\ Support/rtk/tee/      # 删除 tee 故障日志
+# Linux
+rm ~/.local/share/rtk/history.db    # 删除追踪数据库
 rm -rf ~/.local/share/rtk/tee/      # 删除 tee 故障日志
 ```
 

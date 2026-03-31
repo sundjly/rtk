@@ -6,7 +6,7 @@
 //!
 //! # Architecture
 //!
-//! - Storage: SQLite database (~/.local/share/rtk/tracking.db)
+//! - Storage: SQLite database (macOS: ~/Library/Application Support/rtk/history.db, Linux: ~/.local/share/rtk/history.db)
 //! - Retention: 14-day automatic cleanup
 //! - Metrics: Input/output tokens, savings %, execution time
 //!
